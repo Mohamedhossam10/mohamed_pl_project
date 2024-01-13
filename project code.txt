@@ -1,0 +1,95 @@
+set serveroutput on
+declare 
+cursor installments
+ is
+select contracts.CONTRACT_ID, contracts.CONTRACT_STARTDATE, contracts.CONTRACT_ENDDATE,
+ contracts.CONTRACT_TOTAL_FEES,contracts.CONTRACT_DEPOSIT_FEES, contracts.CONTRACT_PAYMENT_TYPE,
+ clients.CLIENT_ID, clients.CLIENT_NAME from clients,contracts where clients.CLIENT_ID=contracts.CLIENT_ID;
+
+v_payment_type CONTRACTS.CONTRACT_PAYMENT_TYPE%type;
+v_client_id clients.CLIENT_ID%type;
+v_months number(3);
+v_num_of_installments number(3);
+v_total contracts.CONTRACT_TOTAL_FEES%type;
+v_install contracts.CONTRACT_TOTAL_FEES%type;
+i number(3) := 1;
+fees_date contracts.CONTRACT_STARTDATE%type; 
+begin
+
+
+
+for v_install_record in installments loop
+v_payment_type:= v_install_record.CONTRACT_PAYMENT_TYPE;
+v_client_id := v_install_record.CLIENT_ID;
+IF v_payment_type = 'ANNUAL' THEN
+v_months := months_between(v_install_record.CONTRACT_ENDDATE,v_install_record.CONTRACT_STARTDATE);
+v_total := v_install_record.CONTRACT_TOTAL_FEES - nvl(v_install_record.CONTRACT_DEPOSIT_FEES,0);
+v_num_of_installments := v_months/12;
+v_install := v_total/v_num_of_installments;
+fees_date := v_install_record.CONTRACT_STARTDATE;
+while i <= v_num_of_installments loop
+fees_date := add_months(fees_date,12);
+INSERT INTO INSTALLMENTS_PAID
+(INSTALLMENT_ID, CONTRACT_ID, INSTALLMENT_DATE, INSTALLMENT_AMOUNT)
+VALUES
+(INSTALLMENTS_PAID_SEQ.nextval,v_install_record.CONTRACT_ID,fees_date,v_install );
+  i := i + 1;
+
+end loop;
+i := 1;
+elsif v_payment_type = 'QUARTER' then
+v_months := months_between(v_install_record.CONTRACT_ENDDATE,v_install_record.CONTRACT_STARTDATE);
+v_total := v_install_record.CONTRACT_TOTAL_FEES - nvl(v_install_record.CONTRACT_DEPOSIT_FEES,0);
+v_num_of_installments := v_months/3;
+v_install := v_total/v_num_of_installments;
+fees_date := v_install_record.CONTRACT_STARTDATE;
+while i <= v_num_of_installments loop
+fees_date := add_months(fees_date,3);
+INSERT INTO INSTALLMENTS_PAID
+(INSTALLMENT_ID, CONTRACT_ID, INSTALLMENT_DATE, INSTALLMENT_AMOUNT)
+VALUES
+(INSTALLMENTS_PAID_SEQ.nextval,v_install_record.CONTRACT_ID,fees_date,v_install );
+  i := i + 1;
+
+end loop;
+i := 1;
+elsif v_payment_type = 'HALF_ANNUAL' then
+v_months := months_between(v_install_record.CONTRACT_ENDDATE,v_install_record.CONTRACT_STARTDATE);
+v_total := v_install_record.CONTRACT_TOTAL_FEES - nvl(v_install_record.CONTRACT_DEPOSIT_FEES,0);
+v_num_of_installments := v_months/6;
+v_install := v_total/v_num_of_installments;
+fees_date := v_install_record.CONTRACT_STARTDATE;
+while i <= v_num_of_installments loop
+fees_date := add_months(fees_date,6);
+INSERT INTO INSTALLMENTS_PAID
+(INSTALLMENT_ID, CONTRACT_ID, INSTALLMENT_DATE, INSTALLMENT_AMOUNT)
+VALUES
+(INSTALLMENTS_PAID_SEQ.nextval,v_install_record.CONTRACT_ID,fees_date,v_install );
+  i := i + 1;
+
+end loop;
+i := 1;
+elsif v_payment_type = 'MONTHLY' then
+v_months := months_between(v_install_record.CONTRACT_ENDDATE,v_install_record.CONTRACT_STARTDATE);
+v_total := v_install_record.CONTRACT_TOTAL_FEES - nvl(v_install_record.CONTRACT_DEPOSIT_FEES,0);
+v_num_of_installments := v_months/1;
+v_install := v_total/v_num_of_installments;
+fees_date := v_install_record.CONTRACT_STARTDATE;
+while i <= v_num_of_installments loop
+fees_date := add_months(fees_date,1);
+INSERT INTO INSTALLMENTS_PAID
+(INSTALLMENT_ID, CONTRACT_ID, INSTALLMENT_DATE, INSTALLMENT_AMOUNT)
+VALUES
+(INSTALLMENTS_PAID_SEQ.nextval,v_install_record.CONTRACT_ID,fees_date,v_install );
+  i := i + 1;
+
+end loop;
+i := 1;
+ END IF;
+
+
+
+
+
+end loop;
+end;
